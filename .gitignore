@@ -1,0 +1,9 @@
+node_modules/
+test-results/
+coverage/
+.coverage
+*.pyc
+__pycache__/
+.env
+.env.local
+*.log

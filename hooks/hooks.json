@@ -1,0 +1,65 @@
+{
+  "hooks": [
+    {
+      "type": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "filePattern": "*.py"
+      },
+      "hooks": [
+        {
+          "command": "ruff format \"$FILE\" && ruff check --fix \"$FILE\" 2>/dev/null || true",
+          "description": "Python auto-format with ruff (on .py edit)"
+        }
+      ]
+    },
+    {
+      "type": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "filePattern": "*.sql"
+      },
+      "hooks": [
+        {
+          "command": "command -v sqlfmt >/dev/null 2>&1 && sqlfmt \"$FILE\" || true",
+          "description": "SQL auto-format with sqlfmt (on .sql edit)"
+        }
+      ]
+    },
+    {
+      "type": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "filePattern": "*.py"
+      },
+      "hooks": [
+        {
+          "command": "grep -n 'collect()\\|toPandas()\\|\\.show()' \"$FILE\" && echo '⚠ Spark anti-pattern detected: collect()/toPandas()/show() found. Consider using take(), limit(), or write operations instead.' || true",
+          "description": "Spark anti-pattern detection (collect, toPandas, show)"
+        }
+      ]
+    },
+    {
+      "type": "PreToolUse",
+      "matcher": {
+        "tool": "Write",
+        "filePattern": "*.py"
+      },
+      "hooks": [
+        {
+          "command": "echo \"$CONTENT\" | grep -iE '(password|secret|api_key|access_key|connection_string)\\s*=\\s*[\"'\\'']((?!\\{\\{|\\$|os\\.environ|getenv).)+[\"'\\'']]' && echo '🚨 Potential secret detected in file. Use environment variables or Key Vault instead.' && exit 1 || true",
+          "description": "Secret detection in Python files"
+        }
+      ]
+    },
+    {
+      "type": "Stop",
+      "hooks": [
+        {
+          "command": "git diff --name-only --diff-filter=AM 2>/dev/null | grep '\\.py$' | xargs grep -l 'print(' 2>/dev/null | head -5 && echo '⚠ print() statements found in modified Python files. Use logger instead.' || true",
+          "description": "Check for print() in modified Python files (use logger instead)"
+        }
+      ]
+    }
+  ]
+}
