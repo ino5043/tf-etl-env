@@ -1,0 +1,2 @@
+# bash スクリプトは Windows で取り出しても LF のままにする（CRLF だと bash が実行できない）
+*.sh text eol=lf
