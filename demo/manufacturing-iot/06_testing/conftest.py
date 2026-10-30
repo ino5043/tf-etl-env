@@ -46,6 +46,9 @@ def spark():
         .config("spark.default.parallelism", "1")
         .config("spark.ui.enabled", "false")
         .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        # src/ は Spark 3.5（Fabric Runtime 1.3）前提で cast 失敗 = NULL を期待する。
+        # PySpark 4.x は ANSI モードが既定で有効なため、3.5 と同じ挙動に揃える
+        .config("spark.sql.ansi.enabled", "false")
         .getOrCreate()
     )
     session.sparkContext.setLogLevel("WARN")

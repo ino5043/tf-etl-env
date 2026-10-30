@@ -1,0 +1,51 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 20, 'nodeSpacing': 12}}}%%
+flowchart TB
+    subgraph OnPrem["オンプレミス（工場ネットワーク）"]
+        OP1["MES / 生産管理 DB<br/>SQL Server 等"]
+        OP2["ファイルサーバー<br/>MES 出力 CSV・Excel"]
+        OP3["IoT ゲートウェイ<br/>設備センサー"]
+        GW["On-premises data gateway<br/>クラスタ 2 台以上<br/>送信 443 のみ"]
+    end
+
+    subgraph Ingest["Fabric 取り込み層（ws-mfg-ingest）"]
+        IN1["Data Factory パイプライン<br/>Copy アクティビティ"]
+        IN2["Dataflow Gen2<br/>小規模マスタの整形"]
+        IN3["Mirroring<br/>DB のほぼリアルタイム複製"]
+        IN4["Eventstream<br/>センサーストリーム"]
+    end
+
+    subgraph OneLake["OneLake（Lakehouse / Medallion）"]
+        BR["Bronze<br/>raw_production<br/>全列 STRING"]
+        SV["Silver<br/>production_facts<br/>equipment_master"]
+        GD["Gold<br/>daily_production_kpi<br/>equipment_health"]
+        SC["Shortcuts<br/>ADLS Gen2 / 既存 Blob"]
+    end
+
+    subgraph Serve["提供層（ws-mfg-analytics）"]
+        SM["セマンティックモデル<br/>Direct Lake + RLS"]
+        PBI["Power BI<br/>工場長ダッシュボード"]
+        SQL["SQL 分析エンドポイント<br/>アドホック分析"]
+    end
+
+    subgraph Ops["監視・統制"]
+        MON["Monitoring hub<br/>Capacity Metrics<br/>実行ログ・アラート"]
+        GOV["Entra ID / Purview<br/>ラベル・監査ログ"]
+    end
+
+    OP1 --> GW
+    OP2 --> GW
+    OP3 -->|MQTT / HTTPS| IN4
+    GW --> IN1
+    GW --> IN2
+    OP1 -.->|対応ソースのみ| IN3
+    IN1 --> BR
+    IN2 --> BR
+    IN3 --> BR
+    IN4 --> BR
+    SC --> BR
+    BR -->|Notebook 品質ゲート1| SV
+    SV -->|Notebook 品質ゲート2| GD
+    GD --> SM --> PBI
+    GD --> SQL
+    Ingest -.-> MON
+    OneLake -.-> GOV

@@ -1,0 +1,66 @@
+%%{init: {'theme': 'neutral'}}%%
+erDiagram
+    %% =========================================================================
+    %% Manufacturing IoT Demo - Power BI Semantic Model (Direct Lake)
+    %% Star Schema: 2 facts (Gold) + conformed dimensions (Lakehouse tables)
+    %% All relationships: many-to-one, single direction (dim -> fact)
+    %% =========================================================================
+
+    dim_date ||--o{ daily_production_kpi : "calendar_date = production_date"
+    dim_line ||--o{ daily_production_kpi : "line_id"
+    dim_date ||--o{ equipment_health : "calendar_date = production_date"
+    dim_line ||--o{ equipment_health : "line_id"
+    dim_equipment ||--o{ equipment_health : "equipment_id"
+    dim_status ||--o{ equipment_health : "status = status_summary (任意)"
+
+    dim_date {
+        DATE calendar_date PK "日付（日付テーブルとしてマーク）"
+        INT year "年"
+        STRING year_month "年月（例: 2026年01月）"
+        INT year_month_sort "年月の並べ替えキー"
+        STRING weekday_jp "曜日（月〜日）"
+        DATE week_start_date "週開始日（月曜）"
+        INT fiscal_year "年度（4月始まり）"
+    }
+
+    dim_line {
+        STRING line_id PK "ライン ID"
+        STRING line_name "ライン名"
+    }
+
+    dim_equipment {
+        STRING equipment_id PK "設備 ID"
+        STRING equipment_name "設備名"
+        STRING line_id "現行の設置ライン（属性・リレーションなし）"
+        STRING line_name "現行の設置ライン名"
+    }
+
+    dim_status {
+        STRING status PK "設備状態（正常/警告/異常/停止）"
+        INT severity_order "深刻度（1=正常〜4=停止）"
+    }
+
+    daily_production_kpi {
+        DATE production_date FK "生産日"
+        STRING line_id FK "ライン ID"
+        BIGINT total_planned_quantity "計画数量合計"
+        BIGINT total_actual_quantity "実績数量合計"
+        BIGINT total_defect_quantity "不良数量合計"
+        BIGINT total_good_quantity "良品数量合計"
+        BIGINT day_shift_quantity "日勤実績"
+        BIGINT night_shift_quantity "夜勤実績"
+        TIMESTAMP _aggregated_at "集計実行日時"
+    }
+
+    equipment_health {
+        DATE production_date FK "対象日"
+        STRING equipment_id FK "設備 ID"
+        STRING line_id FK "設置ライン ID（当日時点）"
+        DOUBLE rolling_7d_avg_temperature "7日平均温度"
+        DOUBLE rolling_7d_avg_vibration "7日平均振動"
+        BOOLEAN temperature_alert "温度アラート"
+        BOOLEAN vibration_alert "振動アラート"
+        STRING status_summary FK "状態サマリ"
+        INT abnormal_count "異常/停止回数"
+        INT measurement_count "計測レコード数"
+    }

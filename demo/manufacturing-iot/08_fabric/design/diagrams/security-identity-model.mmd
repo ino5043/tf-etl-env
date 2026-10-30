@@ -1,0 +1,35 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 30, 'nodeSpacing': 10}}}%%
+flowchart LR
+    subgraph Entra["Microsoft Entra ID（グループ）"]
+        E1["sg-fab-mfg-admin"]
+        E2["sg-fab-mfg-engineer"]
+        E3["sg-fab-mfg-analyst"]
+        E4["sg-fab-mfg-plant-A-mgr<br/>sg-fab-mfg-plant-B-mgr"]
+        E5["sg-fab-mfg-auditor"]
+        E6["workspace identity<br/>サービスプリンシパル"]
+    end
+
+    subgraph WSI["ws-mfg-ingest-prod"]
+        W1["Admin / Member / Contributor<br/>Lakehouse・パイプライン・Notebook"]
+    end
+
+    subgraph WSA["ws-mfg-analytics-prod"]
+        W2["Contributor<br/>セマンティックモデル開発"]
+        W3["Viewer<br/>SQL 分析エンドポイント"]
+    end
+
+    subgraph App["Power BI アプリ / 共有"]
+        A1["アプリ対象者<br/>セマンティックモデル RLS 適用"]
+    end
+
+    subgraph Audit["監査"]
+        AU["Purview 監査ログ<br/>Admin monitoring"]
+    end
+
+    E1 -->|Admin| W1
+    E2 -->|Contributor| W1
+    E6 -->|接続資格情報| W1
+    E3 -->|Contributor| W2
+    E3 -->|Viewer| W3
+    E4 -->|ワークスペース権限なし| A1
+    E5 -->|監査ロール| AU

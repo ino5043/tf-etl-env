@@ -1,0 +1,26 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 20, 'nodeSpacing': 10}}}%%
+flowchart TB
+    S["イントラサービスを 1 件選ぶ"]
+    Q0{"今も使われているか"}
+    R0["Retire<br/>廃止"]
+    Q1{"主目的はデータ処理<br/>集計・帳票か"}
+    F1["Fabric へ Replatform<br/>パイプライン・Notebook<br/>Power BI・ページ分割レポート"]
+    Q2{"利用者が入力する<br/>画面・API があるか"}
+    Q3{"ステートレスで<br/>短時間に終わる処理か"}
+    A1["Azure Functions<br/>Flex Consumption 等"]
+    A2["Azure Container Apps<br/>既存コンテナ化して移行"]
+    Q4{"工場設備と<br/>低遅延で接続が必要か"}
+    K1["Retain / Rehost<br/>オンプレ残置または<br/>Azure VM へ移設"]
+    L1["Logic Apps / Power Automate<br/>通知・承認フロー"]
+
+    S --> Q0
+    Q0 -->|No| R0
+    Q0 -->|Yes| Q4
+    Q4 -->|Yes| K1
+    Q4 -->|No| Q1
+    Q1 -->|Yes| F1
+    Q1 -->|No| Q2
+    Q2 -->|No 連携・通知のみ| L1
+    Q2 -->|Yes| Q3
+    Q3 -->|Yes| A1
+    Q3 -->|No 常駐・長時間| A2

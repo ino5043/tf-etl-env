@@ -1,0 +1,14 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 25, 'nodeSpacing': 10}}}%%
+flowchart LR
+    P0["Phase 0<br/>現状分析・PoC<br/>4〜6 週"]
+    G0{"Gate 0<br/>PoC 合格<br/>容量見積確定"}
+    P1["Phase 1<br/>基盤構築<br/>並行稼働<br/>6〜8 週"]
+    G1{"Gate 1<br/>突合差異 0<br/>SLA 連続達成"}
+    P2["Phase 2<br/>本番切替<br/>2〜3 週"]
+    G2{"Gate 2<br/>安定稼働<br/>利用者受入"}
+    P3["Phase 3<br/>旧系廃止<br/>最適化<br/>4 週〜"]
+    RB["ロールバック<br/>旧系へ参照切替"]
+
+    P0 --> G0 --> P1 --> G1 --> P2 --> G2 --> P3
+    P2 -.->|切替判定 NG| RB
+    RB -.-> P1
