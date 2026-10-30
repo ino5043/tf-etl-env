@@ -15,12 +15,16 @@ tf-standard-env（共通コア）の上に、ETL 固有のエージェント・�
 # 共通コアが未インストールの場合
 cd ../10_tf-standard-env && npm run install:env
 
-# ETL パッケージをインストール
+# ETL パッケージをインストール（agents / commands / skills を ~/.claude/ に配置）
 npm run install:env
 
-# プロジェクトに CLAUDE.md を初期化
+# プロジェクトに CLAUDE.md を初期化し、ルールを <project>/.claude/rules/ に配置
 npm run install:env -- --project /path/to/etl-project
 ```
+
+> **ルールはプロジェクト単位で配布します**（tf-standard-env ADR-009）。
+> `npm run install:env` だけでは領域ルールは読み込まれません。対象プロジェクトごとに `--project` を実行してください。
+> 旧方式で `~/.claude/rules/` に入った領域ルールは、`npm run install:env` 実行時に自動で削除されます。
 
 ## Components
 
