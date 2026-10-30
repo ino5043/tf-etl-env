@@ -1,0 +1,28 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 30, 'nodeSpacing': 12}}}%%
+flowchart LR
+    subgraph Plant["工場ネットワーク"]
+        SRC["MES DB<br/>ファイルサーバー"]
+        GW["On-premises data gateway<br/>クラスタ<br/>送信 HTTPS 443 のみ"]
+        USR["社内利用者端末<br/>Intune 準拠"]
+    end
+
+    subgraph Azure["Azure サブスクリプション"]
+        KV["Key Vault<br/>Private Endpoint"]
+        ADLS["ADLS Gen2<br/>ファイアウォール有効"]
+        PE["Private Link 用 VNet<br/>任意"]
+    end
+
+    subgraph Fabric["Microsoft Fabric テナント"]
+        CA["Entra 条件付きアクセス<br/>MFA・準拠端末・場所"]
+        WS["ワークスペース<br/>Lakehouse・パイプライン"]
+        SP["Spark マネージド VNet<br/>マネージドプライベートエンドポイント"]
+        TWA["信頼されたワークスペースアクセス<br/>workspace identity"]
+    end
+
+    SRC --> GW -->|Azure Relay 経由| WS
+    USR --> CA --> WS
+    USR -.->|ExpressRoute / VPN| PE -.->|Private Link| WS
+    SP --> KV
+    TWA --> ADLS
+    WS --- SP
+    WS --- TWA
