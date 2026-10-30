@@ -3,10 +3,10 @@
  * tf-etl-env インストールスクリプト
  *
  * Usage:
- *   node scripts/install.js                        # ~/.claude/ に agents/rules/commands/skills を同期
+ *   node scripts/install.js                        # ~/.claude/ に agents/commands/skills を同期（rules は除く）
  *   node scripts/install.js --dry-run              # プレビュー（変更なし）
  *   node scripts/install.js --uninstall            # アンインストール
- *   node scripts/install.js --project <path>       # プロジェクトの CLAUDE.md に ETL セクションを追記
+ *   node scripts/install.js --project <path>       # プロジェクトの CLAUDE.md に ETL セクションを追記し、.claude/rules/ にルールを配置
  *
  * 前提条件:
  *   tf-standard-env（共通コア）が先にインストールされていること。
@@ -22,7 +22,6 @@ const SOURCE_DIR = path.resolve(__dirname, '..');
 
 const COMPONENTS = [
   { src: 'agents', dest: 'agents', label: 'Agents (ETL)' },
-  { src: 'rules', dest: 'rules', label: 'Rules (ETL)' },
   { src: 'commands', dest: 'commands', label: 'Commands (ETL)' },
   { src: 'skills', dest: 'skills', label: 'Skills (ETL)' },
 ];
@@ -111,6 +110,46 @@ function checkTfseInstalled() {
   return installed;
 }
 
+// ルールはグローバル (~/.claude/rules) ではなくプロジェクト単位 (<project>/.claude/rules) で配布する。
+// ドメイン別ルールをグローバルに置くと全プロジェクトで毎回読み込まれ、指示ファイルの上限を超えるため。
+const RULES_SRC = path.join(SOURCE_DIR, 'rules');
+const GLOBAL_RULES_DIR = path.join(CLAUDE_DIR, 'rules');
+
+function listRuleFiles() {
+  if (!fs.existsSync(RULES_SRC)) return [];
+  return fs.readdirSync(RULES_SRC).filter((f) => f.endsWith('.md'));
+}
+
+function copyRulesToProject(targetPath, dryRun) {
+  const destDir = path.join(targetPath, '.claude', 'rules');
+  const files = listRuleFiles();
+  if (!dryRun) ensureDir(destDir);
+  for (const file of files) {
+    const destPath = path.join(destDir, file);
+    console.log(`  ${fs.existsSync(destPath) ? '~' : '+'} .claude/rules/${file}`);
+    if (!dryRun) fs.copyFileSync(path.join(RULES_SRC, file), destPath);
+  }
+  return files.length;
+}
+
+// 旧方式でグローバルに入ったルールを削除する。グローバル側が編集されていれば残して警告する。
+function removeGlobalRules(dryRun) {
+  let removed = 0;
+  for (const file of listRuleFiles()) {
+    const globalPath = path.join(GLOBAL_RULES_DIR, file);
+    if (!fs.existsSync(globalPath)) continue;
+    const same = fs.readFileSync(globalPath).equals(fs.readFileSync(path.join(RULES_SRC, file)));
+    if (!same) {
+      console.warn(`  ! rules/${file}: グローバル版がソースと異なるため残しました（手動で確認してください）`);
+      continue;
+    }
+    console.log(`  - rules/${file}`);
+    if (!dryRun) fs.unlinkSync(globalPath);
+    removed++;
+  }
+  return removed;
+}
+
 function install(options) {
   const { dryRun } = options;
   const mode = dryRun ? '[DRY RUN] ' : '';
@@ -143,6 +182,9 @@ function install(options) {
     console.log();
   }
 
+  console.log('Rules（旧方式のグローバル配置を削除。ルールは --project <path> で配置）:');
+  removeGlobalRules(dryRun);
+  console.log();
   console.log(`${'─'.repeat(40)}`);
   console.log(`${mode}${totalFiles} ファイルを処理しました`);
 
@@ -178,6 +220,7 @@ function uninstall() {
     removed++;
   }
 
+  removed += removeGlobalRules(false);
   console.log(`${'─'.repeat(40)}`);
   console.log(`${removed} ファイルを削除しました（共通コアは維持）`);
 }
@@ -243,6 +286,9 @@ function initProject(projectPath) {
   console.log(`プロジェクト: ${targetPath}`);
   console.log();
 
+  console.log('Rules:');
+  const ruleCount = copyRulesToProject(targetPath, false);
+  console.log(`  ${ruleCount} ファイルを .claude/rules/ に配置\n`);
   if (fs.existsSync(claudeMdPath)) {
     const content = fs.readFileSync(claudeMdPath, 'utf8');
     if (content.includes(TFSE_ETL_MARKER)) {
