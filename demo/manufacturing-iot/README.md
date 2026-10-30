@@ -92,6 +92,7 @@ demo/manufacturing-iot/
 │   │   └── equipment_master_seed.csv
 │   ├── powerbi/                 # セマンティックモデル・DAX・ダッシュボード仕様
 │   ├── design/                  # 移行・セキュリティ設計
+│   ├── automation/              # 手順 2〜9 の自動化（deploy.sh、REST API）
 │   └── diagrams/
 │       └── fabric-deploy-flow.mmd
 │
