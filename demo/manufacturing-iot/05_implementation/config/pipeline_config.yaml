@@ -1,0 +1,69 @@
+# =============================================================================
+# パイプライン設定 — 工場生産実績 ETL
+# =============================================================================
+
+pipeline:
+  name: "daily_production_load"
+  description: "工場生産実績 CSV → Lakehouse（Bronze → Silver → Gold）"
+  owner: "データエンジニアリングチーム"
+  schedule: "0 4 * * *"  # 毎日 AM 4:00 JST
+
+# --- ソース ---
+source:
+  type: "csv"
+  path: "abfss://raw@factorylakehouse.dfs.core.windows.net/mes/production/"
+  file_pattern: "production_{date}.csv"
+  encoding: "utf-8-sig"
+  delimiter: ","
+  header: true
+
+# --- Medallion レイヤーパス ---
+layers:
+  bronze:
+    catalog: "factory_lakehouse"
+    schema: "bronze"
+    table: "raw_production"
+    path: "Tables/bronze/raw_production"
+  silver:
+    catalog: "factory_lakehouse"
+    schema: "silver"
+    tables:
+      production_facts: "Tables/silver/production_facts"
+      equipment_master: "Tables/silver/equipment_master"
+  gold:
+    catalog: "factory_lakehouse"
+    schema: "gold"
+    tables:
+      daily_production_kpi: "Tables/gold/daily_production_kpi"
+      equipment_health: "Tables/gold/equipment_health"
+  meta:
+    dead_letter: "Tables/meta/dead_letter_production"
+
+# --- 品質ゲート閾値 ---
+quality_gates:
+  bronze_to_silver:
+    min_completeness_score: 0.90
+    mandatory_columns:
+      - "production_date"
+      - "line_id"
+      - "product_code"
+  silver_to_gold:
+    min_quality_score: 0.95
+
+# --- 冪等性設定 ---
+idempotency:
+  strategy: "partition_overwrite"
+  partition_column: "production_date"
+
+# --- リトライ設定 ---
+retry:
+  max_attempts: 3
+  backoff_base_seconds: 2
+  backoff_max_seconds: 30
+
+# --- SLA ---
+sla:
+  deadline: "08:00"
+  timezone: "Asia/Tokyo"
+  warning_minutes_before: 60
+  error_rate_threshold: 0.01

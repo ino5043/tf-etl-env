@@ -1,0 +1,114 @@
+# =============================================================================
+# SLA 定義 — 工場生産実績 ETL パイプライン
+# =============================================================================
+
+sla:
+  name: "Daily Production Pipeline SLA"
+  version: "1.0.0"
+  effective_date: "2026-01-01"
+  owner: "データエンジニアリングチーム"
+
+# --- 鮮度（Freshness）---
+freshness:
+  deadline: "08:00"
+  timezone: "Asia/Tokyo"
+  description: "前日の生産実績データが AM 8:00 までにダッシュボードに反映される"
+  measurement:
+    method: "パイプライン完了時刻の監視"
+    check_interval: "5分"
+  escalation:
+    warning:
+      threshold_minutes: 60  # AM 7:00 時点で未完了
+      action: "Slack #data-alert チャンネルに警告通知"
+    critical:
+      threshold_minutes: 0   # AM 8:00 時点で未完了
+      action: "PagerDuty → データエンジニアリングチーム当番"
+    max_delay:
+      threshold: "10:00"
+      description: "AM 10:00 を超えた場合は工場長にエスカレーション"
+
+# --- 可用性（Availability）---
+availability:
+  target: 99.5  # %
+  measurement_window: "月次"
+  calculation: "(正常完了日数 / 営業日数) × 100"
+  exclusions:
+    - "計画メンテナンス（事前通知済み）"
+    - "ソースシステム側の計画停止"
+
+# --- データ品質（Quality）---
+quality:
+  error_rate_threshold: 0.01  # 1%
+  description: "品質ゲート不合格率が 1% を超えた場合はアラート"
+  measurement:
+    method: "transform_stats.error_rate の監視"
+  escalation:
+    warning:
+      threshold: 0.005  # 0.5%
+      action: "データ品質レポートを品質管理チームに送信"
+    critical:
+      threshold: 0.01   # 1%
+      action: "パイプライン一時停止、データ品質チーム緊急対応"
+
+# --- 完全性（Completeness）---
+completeness:
+  min_record_count: 400  # 通常 500-1000 件のため、400 未満は異常
+  description: "入力レコード数が閾値を下回った場合はアラート"
+  escalation:
+    warning:
+      threshold: 400
+      action: "ソースファイル確認依頼を MES チームに送信"
+    critical:
+      threshold: 100
+      action: "パイプライン一時停止、MES チーム緊急連絡"
+
+# --- パフォーマンス（Performance）---
+performance:
+  max_duration_minutes: 30
+  description: "パイプライン全体の処理時間が 30 分を超えた場合はアラート"
+  expected_duration_minutes: 10
+  escalation:
+    warning:
+      threshold_minutes: 20
+      action: "Spark ジョブのリソース使用状況を確認"
+    critical:
+      threshold_minutes: 30
+      action: "Spark Optimizer エージェントで自動チューニング検討"
+
+# --- リトライポリシー ---
+retry:
+  max_attempts: 3
+  backoff:
+    type: "exponential"
+    base_seconds: 2
+    max_seconds: 30
+  retryable_errors:
+    - "ネットワーク一時障害"
+    - "Spark セッションタイムアウト"
+    - "Delta テーブルロック競合"
+  non_retryable_errors:
+    - "スキーマ不一致"
+    - "ソースファイル未着"
+    - "認証エラー"
+
+# --- 通知先 ---
+notification:
+  channels:
+    slack:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#data-alert"
+    pagerduty:
+      service_key: "${PAGERDUTY_SERVICE_KEY}"
+    email:
+      recipients:
+        - "data-engineering@example.com"
+        - "factory-manager@example.com"
+
+# --- レビュースケジュール ---
+review:
+  frequency: "四半期"
+  next_review: "2026-04-01"
+  participants:
+    - "データエンジニアリングチーム"
+    - "製造部 生産管理課"
+    - "品質管理チーム"

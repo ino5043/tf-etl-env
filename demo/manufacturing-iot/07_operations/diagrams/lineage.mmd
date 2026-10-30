@@ -1,0 +1,38 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 25, 'nodeSpacing': 15}}}%%
+flowchart LR
+    subgraph Source["Source Layer"]
+        MES["MES<br/>production_{date}.csv"]
+    end
+
+    subgraph Bronze["Bronze Layer"]
+        RAW["raw_production<br/>全 STRING 型<br/>+ メタデータ列"]
+    end
+
+    subgraph Silver["Silver Layer"]
+        FACTS["production_facts<br/>型変換・品質チェック済み<br/>+ 計算列"]
+        DL["dead_letter_production<br/>品質ゲート不合格"]
+    end
+
+    subgraph Gold["Gold Layer"]
+        KPI["daily_production_kpi<br/>日次 × ライン別 KPI"]
+        HEALTH["equipment_health<br/>設備健全性スコア"]
+    end
+
+    subgraph BI["BI Layer"]
+        PBI["Power BI Dashboard<br/>工場長ダッシュボード"]
+    end
+
+    MES -->|"Extract<br/>CSV → Delta<br/>冪等: partition overwrite"| RAW
+    RAW -->|"Transform<br/>型変換 + 品質チェック<br/>冪等: partition overwrite"| FACTS
+    RAW -->|"品質ゲート不合格"| DL
+    FACTS -->|"Aggregate<br/>GROUP BY 集計<br/>冪等: partition overwrite"| KPI
+    FACTS -->|"Aggregate<br/>設備メトリクス集計"| HEALTH
+    KPI --> PBI
+    HEALTH --> PBI
+
+    style Source fill:#f0f0f0,stroke:#999
+    style Bronze fill:#cd7f32,stroke:#8b5a2b,color:#fff
+    style Silver fill:#c0c0c0,stroke:#808080
+    style Gold fill:#ffd700,stroke:#b8860b
+    style BI fill:#e6f3ff,stroke:#4a90d9
+    style DL fill:#ffcccc,stroke:#cc0000
