@@ -22,7 +22,7 @@ npm run install:env
 npm run install:env -- --project /path/to/etl-project
 ```
 
-> **ルールはプロジェクト単位で配布します**（tf-standard-env ADR-009）。
+> **ルールはプロジェクト単位で配布します**（TFSE-009）。
 > `npm run install:env` だけでは領域ルールは読み込まれません。対象プロジェクトごとに `--project` を実行してください。
 > 旧方式で `~/.claude/rules/` に入った領域ルールは、`npm run install:env` 実行時に自動で削除されます。
 
