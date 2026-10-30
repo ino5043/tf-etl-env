@@ -1,0 +1,19 @@
+{
+  "name": "fabric-demo-automation",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Deploy the manufacturing IoT demo to Microsoft Fabric (deploy-guide.md steps 2-9)",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "deploy": "node --use-system-ca deploy.js",
+    "pretest": "node -e \"require('fs').mkdirSync('test-results',{recursive:true})\"",
+    "test": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=test-results/coverage.txt --test-reporter=junit --test-reporter-destination=test-results/junit.xml --test-reporter=lcov --test-reporter-destination=test-results/lcov.info --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-lines=80 \"test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "powerbi-client": "2.23.1",
+    "puppeteer-core": "23.11.1"
+  }
+}
