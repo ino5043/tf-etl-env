@@ -1,0 +1,47 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 20, 'nodeSpacing': 10}}}%%
+flowchart LR
+    subgraph Source["Source"]
+        S1["MES CSV<br/>production_YYYYMMDD.csv<br/>AM 3:00 出力"]
+    end
+
+    subgraph Bronze["Bronze Layer"]
+        B1["bronze.raw_production<br/>全カラム STRING<br/>メタデータ付与<br/>パーティション上書き"]
+    end
+
+    subgraph QG1["品質ゲート 1"]
+        Q1{"NOT NULL >= 99%<br/>型変換成功 >= 99%<br/>エラー率 < 1%"}
+    end
+
+    subgraph Silver["Silver Layer"]
+        SV1["silver.production_fact<br/>型変換・クレンジング<br/>重複排除・KPI算出"]
+        SV2["silver.equipment_master<br/>SCD Type 2<br/>設備状態履歴"]
+    end
+
+    subgraph QG2["品質ゲート 2"]
+        Q2{"集計整合性チェック<br/>KPI妥当性検証"}
+    end
+
+    subgraph Gold["Gold Layer"]
+        G1["gold.daily_production_summary<br/>ライン別・製品別 KPI"]
+        G2["gold.equipment_health_summary<br/>設備健全性 KPI"]
+    end
+
+    subgraph Consumers["Consumers"]
+        C1["Power BI<br/>工場長ダッシュボード<br/>AM 8:00 JST"]
+    end
+
+    subgraph ErrorHandling["Error Handling"]
+        DL["meta.dead_letter_production<br/>品質違反レコード"]
+    end
+
+    S1 -->|"SFTP → Blob"| B1
+    B1 --> Q1
+    Q1 -->|"Pass"| SV1
+    Q1 -->|"Pass"| SV2
+    Q1 -->|"Fail"| DL
+    SV1 --> Q2
+    SV2 --> Q2
+    Q2 -->|"Pass"| G1
+    Q2 -->|"Pass"| G2
+    G1 --> C1
+    G2 --> C1

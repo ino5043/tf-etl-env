@@ -1,0 +1,78 @@
+# =============================================================================
+# 製造業 IoT デモ — 要件定義（Phase 1）
+# =============================================================================
+
+# --- 1.1 データソース定義 ---
+source:
+  name: "工場生産実績データ"
+  system: "製造実行システム（MES）"
+  format: "CSV"
+  connection: "ファイル転送（SFTP → Azure Blob Storage）"
+  volume:
+    daily_records: "500〜1,000 件"
+    daily_size: "約 500KB"
+    growth_rate: "月+3%（新製品・新ライン追加に伴う）"
+  update_pattern: "全件洗替（日次バッチ）"
+  update_frequency: "日次（AM 3:00 にファイル出力）"
+  schema_stability: "安定（年1-2回の列追加あり）"
+  data_owner: "製造部 生産管理課"
+  notes: |
+    - 文字コード: UTF-8 BOM 付き
+    - 改行コード: CRLF
+    - ファイル名: production_YYYYMMDD.csv
+    - 設備センサー値（温度・振動）は IoT ゲートウェイ経由で MES に集約済み
+
+# --- 1.2 データターゲット定義 ---
+target:
+  name: "生産実績分析基盤"
+  system: "Azure Fabric Lakehouse（Delta Lake）"
+  format: "Delta Table"
+  usage: "BI（Power BI ダッシュボード）"
+  consumers:
+    - name: "工場長ダッシュボード"
+      access_pattern: "OLAP（日次・週次集計）"
+      priority: "高"
+    - name: "品質管理レポート"
+      access_pattern: "OLAP（不良率分析）"
+      priority: "中"
+    - name: "設備保全チーム"
+      access_pattern: "OLAP（設備稼働分析）"
+      priority: "中"
+  retention: "3年"
+
+# --- 1.3 SLA・制約条件 ---
+sla:
+  freshness_deadline: "毎日 AM 8:00 JST"
+  max_delay: "2時間（AM 10:00 まで許容）"
+  availability: "99.5%"
+  error_rate_threshold: "< 1%"
+
+constraints:
+  budget: "Azure Fabric F2 容量（月額固定）"
+  platform: "Microsoft Fabric（Lakehouse + Notebook + Power BI）"
+  compliance: "社内情報セキュリティ基準（個人情報は作業者IDのみ、匿名化不要）"
+  data_classification: "社外秘"
+  team_skills: "Python ○, SQL ○, PySpark △（学習中）, Power BI ○"
+
+# --- 1.4 ビジネスコンテキスト ---
+business:
+  purpose: |
+    工場長が毎朝の生産会議で前日の生産実績・不良率・設備状態を
+    ダッシュボードで確認し、迅速な意思決定を行えるようにする。
+  stakeholders:
+    - role: "工場長"
+      expectation: "AM 8:00 に前日データが見えること"
+    - role: "品質管理担当"
+      expectation: "不良率の推移と異常検知アラート"
+    - role: "設備保全担当"
+      expectation: "設備の温度・振動トレンドから予兆保全"
+    - role: "生産管理課"
+      expectation: "計画 vs 実績の差異分析"
+  success_criteria: |
+    1. 工場長が AM 8:00 にダッシュボードで前日実績を確認できる
+    2. 不良率が閾値（5%）を超えた場合に自動アラートが飛ぶ
+    3. 設備異常（温度・振動の逸脱）を検知して保全チームに通知
+  known_issues: |
+    - 現在は Excel で手動集計しており、AM 10:00 過ぎにならないとデータが揃わない
+    - 過去データの遡及分析ができない（Excel ファイルが散在）
+    - 不良品の原因分析にライン・設備・作業者の相関が見えていない

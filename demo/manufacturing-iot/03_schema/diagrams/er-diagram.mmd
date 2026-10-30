@@ -1,0 +1,114 @@
+%%{init: {'theme': 'neutral'}}%%
+erDiagram
+    %% =========================================================================
+    %% Manufacturing IoT Demo - ER Diagram
+    %% Medallion Architecture: Bronze -> Silver -> Gold
+    %% =========================================================================
+
+    %% --- Bronze Layer ---
+    bronze_raw_production {
+        STRING production_date "生産日（ソース値）"
+        STRING line_id "生産ライン ID"
+        STRING product_code "製品コード"
+        STRING planned_quantity "計画数量"
+        STRING actual_quantity "実績数量"
+        STRING defect_quantity "不良数量"
+        STRING equipment_id "設備 ID"
+        STRING shift "シフト"
+        STRING operator_id "作業者 ID"
+        STRING temperature "温度"
+        STRING vibration "振動"
+        STRING status "設備状態"
+        STRING created_at "作成日時（ソース値）"
+        TIMESTAMP _ingested_at "取り込み日時"
+        STRING _source_file "元ファイル名"
+        STRING _batch_id "バッチ ID"
+        DATE _ingested_date "取り込み日（PK）"
+    }
+
+    %% --- Silver Layer ---
+    silver_production_facts {
+        BIGINT production_fact_id PK "サロゲートキー"
+        DATE production_date "生産日（パーティション）"
+        STRING line_id "生産ライン ID"
+        STRING product_code "製品コード"
+        STRING equipment_id FK "設備 ID"
+        STRING shift "シフト"
+        STRING operator_id "作業者 ID"
+        INT planned_quantity "計画数量"
+        INT actual_quantity "実績数量"
+        INT defect_quantity "不良数量"
+        INT good_quantity "良品数量"
+        DOUBLE achievement_rate "達成率"
+        DOUBLE defect_rate "不良率"
+        DOUBLE temperature "温度"
+        DOUBLE vibration "振動"
+        STRING status "設備状態"
+        TIMESTAMP source_created_at "ソース作成日時"
+        TIMESTAMP _processed_at "処理日時"
+        STRING _source_file "元ファイル名"
+        STRING _batch_id "バッチ ID"
+    }
+
+    silver_equipment_master {
+        BIGINT equipment_sk PK "サロゲートキー"
+        STRING equipment_id "設備ナチュラルキー"
+        STRING line_id "設置ライン ID"
+        STRING latest_status "最新設備状態"
+        DATE valid_from "有効開始日"
+        DATE valid_to "有効終了日"
+        BOOLEAN is_current "現行フラグ"
+        TIMESTAMP _updated_at "更新日時"
+    }
+
+    %% --- Gold Layer ---
+    gold_daily_production_kpi {
+        DATE production_date PK "生産日（パーティション）"
+        STRING line_id PK "生産ライン ID"
+        BIGINT total_planned_quantity "計画数量合計"
+        BIGINT total_actual_quantity "実績数量合計"
+        BIGINT total_defect_quantity "不良数量合計"
+        BIGINT total_good_quantity "良品数量合計"
+        DOUBLE achievement_rate "達成率"
+        DOUBLE defect_rate "不良率"
+        DOUBLE yield_rate "歩留まり率"
+        INT record_count "レコード数"
+        INT unique_products "品目数"
+        INT unique_operators "作業者数"
+        BIGINT day_shift_quantity "日勤実績"
+        BIGINT night_shift_quantity "夜勤実績"
+        TIMESTAMP _aggregated_at "集計日時"
+    }
+
+    gold_equipment_health {
+        DATE production_date PK "対象日（パーティション）"
+        STRING equipment_id PK "設備 ID"
+        STRING line_id "設置ライン ID"
+        DOUBLE daily_avg_temperature "当日平均温度"
+        DOUBLE daily_max_temperature "当日最高温度"
+        DOUBLE daily_avg_vibration "当日平均振動"
+        DOUBLE daily_max_vibration "当日最大振動"
+        DOUBLE rolling_7d_avg_temperature "7日移動平均温度"
+        DOUBLE rolling_7d_avg_vibration "7日移動平均振動"
+        BOOLEAN temperature_alert "温度アラート"
+        BOOLEAN vibration_alert "振動アラート"
+        STRING status_summary "状態サマリ"
+        INT abnormal_count "異常回数"
+        INT measurement_count "計測数"
+        TIMESTAMP _aggregated_at "集計日時"
+    }
+
+    %% --- Relationships ---
+    %% Bronze -> Silver (ETL transformation)
+    bronze_raw_production ||--o{ silver_production_facts : "型変換・クレンジング"
+    bronze_raw_production ||--o{ silver_equipment_master : "設備マスタ抽出"
+
+    %% Silver -> Silver (reference)
+    silver_equipment_master ||--o{ silver_production_facts : "設備参照"
+
+    %% Silver -> Gold (aggregation)
+    silver_production_facts ||--o{ gold_daily_production_kpi : "日次ライン集計"
+    silver_production_facts ||--o{ gold_equipment_health : "日次設備集計"
+
+    %% Gold cross-reference
+    gold_equipment_health }o--|| silver_equipment_master : "設備マスタ参照"

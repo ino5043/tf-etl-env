@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tf-etl-env Demo — 製造業 IoT ETL パイプライン</title>
+<meta name="description" content="Claude Code + tf-etl-env で構築する製造業 IoT ETL パイプラインのデモ。要件定義からテスト・運用設計まで 7 フェーズを一気通貫で支援。">
+<style>
+  :root {
+    --color-bg: #0f172a;
+    --color-surface: #1e293b;
+    --color-surface-alt: #334155;
+    --color-border: #475569;
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-accent: #38bdf8;
+    --color-accent-dim: #0284c7;
+    --color-bronze: #cd7f32;
+    --color-silver: #c0c0c0;
+    --color-gold: #ffd700;
+    --color-success: #4ade80;
+    --color-warn: #fbbf24;
+    --color-error: #f87171;
+    --max-w: 960px;
+    --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", "Noto Sans JP", system-ui, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+
+  /* --- Hero --- */
+  .hero {
+    text-align: center;
+    padding: 80px 24px 60px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(56,189,248,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,215,0,0.06) 0%, transparent 50%);
+  }
+  .hero > * { position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent-dim);
+    border-radius: 20px;
+    padding: 4px 16px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { color: var(--color-accent); }
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    max-width: 640px;
+    margin: 0 auto 32px;
+  }
+
+  /* --- Stats bar --- */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  /* --- Buttons --- */
+  .cta-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(56,189,248,0.25); }
+  .btn-primary { background: var(--color-accent); color: #0f172a; }
+  .btn-outline { border: 1px solid var(--color-border); color: var(--color-text); background: transparent; }
+  .btn-outline:hover { border-color: var(--color-accent); }
+
+  /* --- Section --- */
+  section { padding: 60px 24px; }
+  .container { max-width: var(--max-w); margin: 0 auto; }
+  .section-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .section-sub {
+    color: var(--color-text-muted);
+    margin-bottom: 40px;
+    font-size: 1rem;
+  }
+
+  /* --- Scenario --- */
+  .scenario {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 32px;
+    border: 1px solid var(--color-border);
+  }
+  .scenario-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+    font-size: 0.95rem;
+  }
+  .flow-node {
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .flow-node small { display: block; color: var(--color-text-muted); font-size: 0.75rem; }
+  .flow-arrow { color: var(--color-accent); font-size: 1.4rem; }
+
+  /* --- Phases --- */
+  .phases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .phase-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .phase-card:hover { border-color: var(--color-accent); }
+  .phase-num {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-accent);
+    margin-bottom: 8px;
+  }
+  .phase-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .phase-card p {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+  }
+  .phase-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
+  .tag-agent { border-color: var(--color-accent); color: var(--color-accent); }
+  .tag-rule { border-color: var(--color-success); color: var(--color-success); }
+  .tag-skill { border-color: var(--color-warn); color: var(--color-warn); }
+
+  /* --- Medallion --- */
+  .medallion {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 32px 0;
+  }
+  .medal-card {
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    border: 2px solid;
+  }
+  .medal-bronze { border-color: var(--color-bronze); background: rgba(205,127,50,0.08); }
+  .medal-silver { border-color: var(--color-silver); background: rgba(192,192,192,0.06); }
+  .medal-gold   { border-color: var(--color-gold);   background: rgba(255,215,0,0.06); }
+  .medal-card h3 { font-size: 1.2rem; margin-bottom: 4px; }
+  .medal-card .medal-icon { font-size: 2rem; margin-bottom: 8px; }
+  .medal-bronze h3 { color: var(--color-bronze); }
+  .medal-silver h3 { color: var(--color-silver); }
+  .medal-gold h3   { color: var(--color-gold); }
+  .medal-card ul {
+    text-align: left;
+    list-style: none;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+  .medal-card li::before { content: "- "; color: var(--color-text-muted); }
+
+  /* --- Quality --- */
+  .quality-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .q-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .q-item .q-icon { font-size: 1.4rem; margin-bottom: 6px; }
+  .q-item .q-name { font-size: 0.85rem; font-weight: 600; }
+  .q-item .q-desc { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 4px; }
+
+  /* --- Test results --- */
+  .test-result-bar {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    border: 1px solid var(--color-border);
+    margin: 32px 0;
+  }
+  .test-badge {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--color-success);
+    white-space: nowrap;
+  }
+  .test-detail { font-size: 0.9rem; color: var(--color-text-muted); }
+  .test-detail strong { color: var(--color-text); }
+
+  /* --- Diagram --- */
+  .diagram-section {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .diagram-section h4 {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .diagram-section img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* --- Components table --- */
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .comp-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .comp-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .comp-table tr:last-child td { border-bottom: none; }
+  .comp-count {
+    display: inline-block;
+    background: var(--color-accent-dim);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    border-radius: 6px;
+  }
+
+  /* --- Value table --- */
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .value-item {
+    background: var(--color-surface);
+    border-left: 3px solid var(--color-accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+  }
+  .value-item h4 { font-size: 0.95rem; margin-bottom: 6px; }
+  .value-item p { font-size: 0.85rem; color: var(--color-text-muted); }
+
+  /* --- CTA bottom --- */
+  .cta-bottom {
+    text-align: center;
+    padding: 60px 24px;
+    background: linear-gradient(180deg, var(--color-bg), #1e293b);
+  }
+  .cta-bottom h2 {
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+  }
+  .cta-bottom p {
+    color: var(--color-text-muted);
+    margin-bottom: 28px;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- Footer --- */
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* --- responsive --- */
+  @media (max-width: 600px) {
+    .hero { padding: 48px 16px 40px; }
+    .stats-bar { gap: 20px; }
+    .scenario-flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+    .test-result-bar { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== Hero ====== -->
+<header class="hero">
+  <div class="hero-badge">tf-etl-env Demo</div>
+  <h1>製造業 IoT <span>ETL パイプライン</span></h1>
+  <p>
+    Claude Code + tf-etl-env で、要件定義からテスト・運用設計まで
+    7 フェーズを一気通貫で構築するデモンストレーション
+  </p>
+
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-value">7</span><span class="stat-label">設計フェーズ</span></div>
+    <div class="stat"><span class="stat-value">83</span><span class="stat-label">テストケース</span></div>
+    <div class="stat"><span class="stat-value">6</span><span class="stat-label">品質次元</span></div>
+    <div class="stat"><span class="stat-value">28</span><span class="stat-label">コンポーネント</span></div>
+  </div>
+
+  <div class="cta-group">
+    <a class="btn btn-primary" href="https://github.com/YOUR_ORG/tf-etl-env/tree/main/demo/manufacturing-iot" target="_blank" rel="noopener">
+      GitHub でデモを見る &rarr;
+    </a>
+    <a class="btn btn-outline" href="#phases">7 フェーズの詳細</a>
+  </div>
+</header>
+
+<!-- ====== Scenario ====== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">シナリオ</h2>
+    <p class="section-sub">製造現場の日次 CSV を Lakehouse に取り込み、品質チェック・KPI 集計を経て AM 8:00 の工場長ダッシュボードへ。</p>
+
+    <div class="scenario">
+      <div class="scenario-flow">
+        <div class="flow-node">
+          <small>SOURCE</small>
+          MES (CSV)
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node" style="border-color:var(--color-bronze);">
+          <small>BRONZE</small>
+          raw_production
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node" style="border-color:var(--color-silver);">
+          <small>SILVER</small>
+          production_facts
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node" style="border-color:var(--color-gold);">
+          <small>GOLD</small>
+          daily_kpi
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-node">
+          <small>BI</small>
+          Power BI
+        </div>
+      </div>
+      <table style="width:100%;font-size:0.85rem;color:var(--color-text-muted);margin-top:16px;">
+        <tr><td style="width:120px;font-weight:600;color:var(--color-text);">データ量</td><td>500〜1,000 件/日</td><td style="width:120px;font-weight:600;color:var(--color-text);">ターゲット</td><td>Azure Fabric (Delta)</td></tr>
+        <tr><td style="font-weight:600;color:var(--color-text);">SLA</td><td>毎日 AM 8:00 JST</td><td style="font-weight:600;color:var(--color-text);">エラー率</td><td>&lt; 1%</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Medallion ====== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">Medallion Architecture</h2>
+    <p class="section-sub">段階的に型安全性・品質を強化する 3 層アーキテクチャ</p>
+    <div class="medallion">
+      <div class="medal-card medal-bronze">
+        <div class="medal-icon">&compfn;</div>
+        <h3>Bronze</h3>
+        <p style="font-size:0.8rem;color:var(--color-text-muted);margin:6px 0 12px;">ソースそのまま保持</p>
+        <ul>
+          <li>全カラム STRING 型</li>
+          <li>メタデータ列を付与</li>
+          <li>パーティション上書き</li>
+        </ul>
+      </div>
+      <div class="medal-card medal-silver">
+        <div class="medal-icon">&diamondsuit;</div>
+        <h3>Silver</h3>
+        <p style="font-size:0.8rem;color:var(--color-text-muted);margin:6px 0 12px;">型変換 + 品質チェック</p>
+        <ul>
+          <li>適切なデータ型に変換</li>
+          <li>6 次元品質ゲート</li>
+          <li>計算列（KPI）追加</li>
+          <li>Dead Letter 分離</li>
+        </ul>
+      </div>
+      <div class="medal-card medal-gold">
+        <div class="medal-icon">&starf;</div>
+        <h3>Gold</h3>
+        <p style="font-size:0.8rem;color:var(--color-text-muted);margin:6px 0 12px;">Star Schema 集計</p>
+        <ul>
+          <li>日次生産 KPI</li>
+          <li>設備健全性スコア</li>
+          <li>BI ダッシュボード用</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 7 Phases ====== -->
+<section id="phases">
+  <div class="container">
+    <h2 class="section-title">7 フェーズ ワークフロー</h2>
+    <p class="section-sub">tf-etl-env のエージェント・ルール・スキルが各フェーズを支援</p>
+
+    <div class="phases-grid">
+      <div class="phase-card">
+        <div class="phase-num">PHASE 1</div>
+        <h3>要件定義</h3>
+        <p>YAML 形式の構造化要件テンプレート。不足情報を AI が推論し、確認を求める。</p>
+        <div class="phase-tags">
+          <span class="tag">requirements.yaml</span>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-num">PHASE 2</div>
+        <h3>アーキテクチャ設計</h3>
+        <p>5 つの代替案を 7 次元で比較。ADR で意思決定を自動記録。</p>
+        <div class="phase-tags">
+          <span class="tag tag-agent">pipeline-architect</span>
+          <span class="tag tag-rule">pipeline-patterns</span>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-num">PHASE 3</div>
+        <h3>スキーマ設計</h3>
+        <p>Medallion の段階的型強化。SCD Type 2 による設備マスタの履歴管理。</p>
+        <div class="phase-tags">
+          <span class="tag tag-agent">schema-designer</span>
+          <span class="tag tag-rule">schema-evolution</span>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-num">PHASE 4</div>
+        <h3>品質ルール設計</h3>
+        <p>6 次元品質フレームワーク + データ契約。品質スコア 5 段階評価。</p>
+        <div class="phase-tags">
+          <span class="tag tag-agent">data-quality-reviewer</span>
+          <span class="tag tag-skill">data-contract</span>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-num">PHASE 5</div>
+        <h3>パイプライン実装</h3>
+        <p>冪等性パターン + Dead Letter テーブル。再実行安全な設計。</p>
+        <div class="phase-tags">
+          <span class="tag tag-skill">pipeline-scaffold</span>
+          <span class="tag tag-rule">idempotency-patterns</span>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-num">PHASE 6</div>
+        <h3>テスト実装</h3>
+        <p>品質ルール 1:1 対応のテストケース。TDD ワークフロー。</p>
+        <div class="phase-tags">
+          <span class="tag tag-agent">etl-tdd-guide</span>
+          <span class="tag tag-rule">etl-testing</span>
+        </div>
+      </div>
+
+      <div class="phase-card" style="grid-column: span 1;">
+        <div class="phase-num">PHASE 7</div>
+        <h3>運用設計</h3>
+        <p>障害対応ランブック 3 シナリオ + データリネージ図 + SLA 定義。</p>
+        <div class="phase-tags">
+          <span class="tag tag-agent">sla-validator</span>
+          <span class="tag tag-skill">incident-runbook</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Quality ====== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">6 次元データ品質</h2>
+    <p class="section-sub">Bronze &rarr; Silver 昇格時に 6 つの観点で品質ゲートを通過</p>
+
+    <div class="quality-grid">
+      <div class="q-item">
+        <div class="q-icon">&#x2611;</div>
+        <div class="q-name">完全性</div>
+        <div class="q-desc">NULL / 空文字チェック</div>
+      </div>
+      <div class="q-item">
+        <div class="q-icon">&#x1F3AF;</div>
+        <div class="q-name">正確性</div>
+        <div class="q-desc">数値範囲チェック</div>
+      </div>
+      <div class="q-item">
+        <div class="q-icon">&#x1F517;</div>
+        <div class="q-name">一貫性</div>
+        <div class="q-desc">フィールド間整合</div>
+      </div>
+      <div class="q-item">
+        <div class="q-icon">&#x23F1;</div>
+        <div class="q-name">適時性</div>
+        <div class="q-desc">鮮度チェック</div>
+      </div>
+      <div class="q-item">
+        <div class="q-icon">&#x1F511;</div>
+        <div class="q-name">一意性</div>
+        <div class="q-desc">複合キー重複検出</div>
+      </div>
+      <div class="q-item">
+        <div class="q-icon">&#x2705;</div>
+        <div class="q-name">有効性</div>
+        <div class="q-desc">Enum 値チェック</div>
+      </div>
+    </div>
+
+    <div class="test-result-bar">
+      <div class="test-badge">83 / 83</div>
+      <div class="test-detail">
+        <strong>全テスト GREEN</strong><br>
+        品質ゲートテスト 28 件 + 変換テスト 27 件 + 集計テスト 17 件 + 抽出テスト 11 件<br>
+        PySpark 3.5.6 / Delta Lake 3.2.1 / Python 3.12
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Diagrams ====== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">アーキテクチャ図</h2>
+    <p class="section-sub">Mermaid で自動生成されたパイプラインフロー・データリネージ</p>
+
+    <div class="diagram-section">
+      <h4>Pipeline Flow</h4>
+      <img src="../02_architecture/diagrams/pipeline-flow.svg" alt="Pipeline Flow Diagram" loading="lazy">
+    </div>
+
+    <div class="diagram-section">
+      <h4>Data Lineage</h4>
+      <img src="../07_operations/diagrams/lineage.svg" alt="Data Lineage Diagram" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- ====== Components ====== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">tf-etl-env コンポーネント</h2>
+    <p class="section-sub">このデモで使用した Agent / Rule / Skill / Command</p>
+
+    <div style="background:var(--color-bg);border-radius:var(--radius);overflow:hidden;border:1px solid var(--color-border);">
+      <table class="comp-table">
+        <thead>
+          <tr><th>カテゴリ</th><th>数</th><th>主なコンポーネント</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Agent</td>
+            <td><span class="comp-count">6</span></td>
+            <td>pipeline-architect, schema-designer, data-quality-reviewer, sla-validator, etl-tdd-guide, spark-optimizer</td>
+          </tr>
+          <tr>
+            <td>Rule</td>
+            <td><span class="comp-count">10</span></td>
+            <td>pipeline-patterns, data-quality, schema-evolution, idempotency-patterns, medallion-architecture ...</td>
+          </tr>
+          <tr>
+            <td>Skill</td>
+            <td><span class="comp-count">7</span></td>
+            <td>pipeline-scaffold, data-contract, test-data-generator, incident-runbook, spark-tuning ...</td>
+          </tr>
+          <tr>
+            <td>Command</td>
+            <td><span class="comp-count">5</span></td>
+            <td>/pipeline-review, /dq-check, /schema-review, /etl-tdd, /lineage</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== Value Prop ====== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">tf-etl-env が解決する課題</h2>
+    <div class="value-grid">
+      <div class="value-item">
+        <h4>設計判断が属人的</h4>
+        <p>ADR で自動記録し、意思決定のトレーサビリティを確保</p>
+      </div>
+      <div class="value-item">
+        <h4>品質チェックが後付け</h4>
+        <p>品質ルールを設計段階で定義。テストファースト</p>
+      </div>
+      <div class="value-item">
+        <h4>障害対応が場当たり的</h4>
+        <p>ランブックを事前生成。冪等性で安全に再実行</p>
+      </div>
+      <div class="value-item">
+        <h4>ドキュメントが陳腐化</h4>
+        <p>コードと同時にドキュメント・図を自動生成</p>
+      </div>
+      <div class="value-item">
+        <h4>7 フェーズの抜け漏れ</h4>
+        <p>専用エージェント + コマンドで各フェーズを支援</p>
+      </div>
+      <div class="value-item">
+        <h4>テスト不足</h4>
+        <p>品質ルール 1:1 対応のテスト。83 件で検証済み</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== CTA Bottom ====== -->
+<div class="cta-bottom">
+  <h2>デモを試してみる</h2>
+  <p>
+    GitHub リポジトリにソースコード・ドキュメント・テスト一式を公開しています。
+    15〜20 分のライブ実演台本も付属。
+  </p>
+  <div class="cta-group">
+    <a class="btn btn-primary" href="https://github.com/YOUR_ORG/tf-etl-env/tree/main/demo/manufacturing-iot" target="_blank" rel="noopener">
+      GitHub でデモを見る &rarr;
+    </a>
+    <a class="btn btn-outline" href="https://github.com/YOUR_ORG/tf-etl-env" target="_blank" rel="noopener">
+      tf-etl-env リポジトリ
+    </a>
+  </div>
+</div>
+
+<!-- ====== Footer ====== -->
+<footer>
+  <p>tf-etl-env &mdash; ETL/連携基盤開発向け Claude Code 標準環境パッケージ</p>
+</footer>
+
+</body>
+</html>

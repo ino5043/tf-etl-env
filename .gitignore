@@ -4,6 +4,8 @@ coverage/
 .coverage
 *.pyc
 __pycache__/
+.pytest_cache/
 .env
 .env.local
 *.log
+.venv/
