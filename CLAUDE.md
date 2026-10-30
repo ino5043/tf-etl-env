@@ -42,6 +42,28 @@ npm run install:env -- --project /path/to/etl-project
 3. **データ品質 6次元**: 完全性, 正確性, 一貫性, 適時性, 一意性, 有効性
 4. **テストファースト**: データ品質テスト → 変換テスト → 統合テスト
 
+## このリポジトリで作業するときに読み込む ETL ルール
+
+このリポジトリ（デモ `demo/manufacturing-iot/` を含む）で作業するときは、次の ETL ルールを読み込む。
+共通ルール（約 7.7 万字）と ETL ルール全 10 個（約 12.3 万字）を合わせると指示ファイルの上限（15 万字）を超えるため、
+Fabric / パイプライン開発に直結する 5 つだけを常時読み込む（TFSE-009 補足）。
+
+@rules/pipeline-patterns.md
+@rules/medallion-architecture.md
+@rules/idempotency-patterns.md
+@rules/data-quality.md
+@rules/etl-testing.md
+
+次の 5 つは常時は読み込まない。該当する作業のときに、ファイルを直接参照するか専用のエージェント・コマンドを使う。
+
+| ルール | 使う場面 | 対応するエージェント・コマンド |
+|--------|---------|------------------------------|
+| `rules/sla-management.md` | SLA・監視・アラート設計 | sla-validator |
+| `rules/etl-security.md` | マスキング・アクセス制御・監査ログ | security-reviewer |
+| `rules/lineage.md` | リネージ・メタデータ管理 | /lineage |
+| `rules/schema-evolution.md` | スキーマ変更・SCD | schema-designer, /schema-review |
+| `rules/partitioning.md` | パーティション・ファイル形式 | spark-optimizer |
+
 ## Architecture
 
 共通コア（tf-standard-env）から継承:
