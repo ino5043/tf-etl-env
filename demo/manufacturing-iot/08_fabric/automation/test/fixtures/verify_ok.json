@@ -1,0 +1,106 @@
+{
+ "counts": [
+  {
+   "table_name": "bronze.raw_production",
+   "row_count": 1036
+  },
+  {
+   "table_name": "silver.production_facts",
+   "row_count": 1030
+  },
+  {
+   "table_name": "meta.dead_letter_production",
+   "row_count": 4
+  },
+  {
+   "table_name": "gold.daily_production_kpi",
+   "row_count": 150
+  },
+  {
+   "table_name": "gold.equipment_health",
+   "row_count": 300
+  },
+  {
+   "table_name": "gold.dim_date",
+   "row_count": 365
+  }
+ ],
+ "layer_gaps": [
+  {
+   "target_date": "2026-10-11",
+   "bronze": 35,
+   "silver": 34,
+   "dead_letter": 0,
+   "deduplicated": 1
+  },
+  {
+   "target_date": "2026-10-25",
+   "bronze": 35,
+   "silver": 34,
+   "dead_letter": 0,
+   "deduplicated": 1
+  }
+ ],
+ "gold_pk_duplicates": [],
+ "equipment_alerts": [
+  {
+   "production_date": "2026-10-28",
+   "equipment_id": "EQ-001"
+  },
+  {
+   "production_date": "2026-10-28",
+   "equipment_id": "EQ-002"
+  },
+  {
+   "production_date": "2026-10-29",
+   "equipment_id": "EQ-001"
+  },
+  {
+   "production_date": "2026-10-29",
+   "equipment_id": "EQ-002"
+  },
+  {
+   "production_date": "2026-10-30",
+   "equipment_id": "EQ-001"
+  },
+  {
+   "production_date": "2026-10-30",
+   "equipment_id": "EQ-002"
+  }
+ ],
+ "dead_letter": [
+  {
+   "target_date": "2026-10-01",
+   "line_id": "LINE-001"
+  },
+  {
+   "target_date": "2026-10-02",
+   "line_id": "LINE-001"
+  },
+  {
+   "target_date": "2026-10-03",
+   "line_id": "LINE-001"
+  },
+  {
+   "target_date": "2026-10-04",
+   "line_id": "LINE-001"
+  }
+ ],
+ "high_defect": [
+  {
+   "production_date": "2026-10-17",
+   "line_id": "LINE-003"
+  },
+  {
+   "production_date": "2026-10-25",
+   "line_id": "LINE-002"
+  }
+ ],
+ "totals": [
+  {
+   "actual": 560725,
+   "defect": 9471
+  }
+ ],
+ "tables": []
+}
