@@ -1,0 +1,6 @@
+line_id,line_name,plant_id,plant_name,process,capacity_per_shift
+LINE-001,第1組立ライン,PLANT-A,A工場,組立,3200
+LINE-002,第2組立ライン,PLANT-A,A工場,組立,3000
+LINE-003,プレスライン,PLANT-A,A工場,プレス,3600
+LINE-004,成形ライン,PLANT-B,B工場,樹脂成形,2800
+LINE-005,検査・梱包ライン,PLANT-B,B工場,検査梱包,3400

@@ -1,0 +1,29 @@
+%%{init: {'theme': 'neutral', 'flowchart': {'rankSpacing': 20, 'nodeSpacing': 10}}}%%
+flowchart LR
+    subgraph Local["ローカル PC"]
+        L1["generate_fabric_sample.py<br/>30 日分 CSV + マスタ"]
+    end
+
+    subgraph Files["Lakehouse Files/"]
+        F1["Files/sample_data/<br/>production_YYYYMMDD.csv<br/>*_master*.csv"]
+    end
+
+    subgraph NB["Notebook<br/>fabric_pipeline"]
+        N1["Bronze → Silver → Gold<br/>品質ゲート・Dead Letter<br/>dim_* 作成"]
+    end
+
+    subgraph Tables["Lakehouse Tables/"]
+        T1["bronze / silver / gold / meta<br/>Delta テーブル"]
+    end
+
+    subgraph Consume["参照"]
+        C1["SQL 分析エンドポイント<br/>Power BI（Direct Lake）"]
+    end
+
+    P1["Data Pipeline<br/>Notebook アクティビティ<br/>日次スケジュール"]
+
+    L1 -->|"アップロード（GUI）"| F1
+    F1 --> N1
+    N1 --> T1
+    T1 --> C1
+    P1 -.->|"TARGET_DATE"| N1

@@ -64,6 +64,7 @@ demo/manufacturing-iot/
 │   ├── test_transform.py
 │   ├── test_aggregate.py
 │   ├── test_quality_gates.py
+│   ├── test_fabric_notebook.py  # 08_fabric Notebook のスモークテスト
 │   └── sample_data/
 │       ├── generate_test_data.py
 │       ├── production_normal.csv
@@ -76,6 +77,23 @@ demo/manufacturing-iot/
 │   ├── monitoring-design.md
 │   └── diagrams/
 │       └── lineage.mmd
+│
+├── 08_fabric/                   # Phase 8: Fabric デプロイ
+│   ├── deploy-guide.md          # 試用版での配置手順・検証 SQL・キャプチャ一覧
+│   ├── notebook/
+│   │   ├── fabric_pipeline.py   # Fabric Notebook（Bronze → Silver → Gold + dim_*）
+│   │   ├── fabric_pipeline.ipynb
+│   │   └── build_ipynb.py       # .py → .ipynb 変換
+│   ├── sample_data/
+│   │   ├── generate_fabric_sample.py
+│   │   ├── production_YYYYMMDD.csv  # 30 日分（2026-10-01〜30）
+│   │   ├── line_master.csv
+│   │   ├── product_master.csv
+│   │   └── equipment_master_seed.csv
+│   ├── powerbi/                 # セマンティックモデル・DAX・ダッシュボード仕様
+│   ├── design/                  # 移行・セキュリティ設計
+│   └── diagrams/
+│       └── fabric-deploy-flow.mmd
 │
 └── showcase/                    # ショーケース素材
     ├── index.html               # ランディングページ（自社サイト誘導用）
@@ -121,6 +139,7 @@ python -m pytest 06_testing/ -v --cov=05_implementation/src --cov-report=html
 | 5 実装 | — | — | idempotency-patterns |
 | 6 テスト | etl-tdd-guide | /etl-tdd | etl-testing |
 | 7 運用 | sla-validator | /lineage | sla-management, lineage |
+| 8 Fabric デプロイ | — | — | idempotency-patterns, medallion-architecture |
 
 **カバー率**: Agent 5/6, Command 5/5, Rule 9/10
 
