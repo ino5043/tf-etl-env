@@ -119,7 +119,7 @@ python generate_fabric_sample.py --start 2026-11-01 --days 14   # 期間を変�
 
 ---
 
-> 手順 2〜9 は `automation/deploy.sh` で自動実行できる（試用版の開始だけは GUI）。使い方は `automation/README.md` を参照する。以下は GUI で行う場合の手順である。
+> 手順 2〜9 は `automation/deploy.js`（Node.js。`automation/deploy.sh` からも起動できる）で自動実行できる（試用版の開始だけは GUI）。使い方は `automation/README.md` を参照する。以下は GUI で行う場合の手順である。
 
 ## 3. 手順詳細
 

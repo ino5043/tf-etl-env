@@ -1,0 +1,54 @@
+{
+  "gold.daily_production_kpi": [
+    {"name": "production_date", "type": "date"},
+    {"name": "line_id", "type": "string"},
+    {"name": "total_planned_quantity", "type": "bigint"},
+    {"name": "total_actual_quantity", "type": "bigint"},
+    {"name": "total_defect_quantity", "type": "bigint"},
+    {"name": "total_good_quantity", "type": "bigint"},
+    {"name": "achievement_rate", "type": "double"},
+    {"name": "defect_rate", "type": "double"},
+    {"name": "day_shift_quantity", "type": "bigint"},
+    {"name": "night_shift_quantity", "type": "bigint"},
+    {"name": "_aggregated_at", "type": "timestamp"}
+  ],
+  "gold.equipment_health": [
+    {"name": "production_date", "type": "date"},
+    {"name": "equipment_id", "type": "string"},
+    {"name": "line_id", "type": "string"},
+    {"name": "rolling_7d_avg_temperature", "type": "double"},
+    {"name": "rolling_7d_avg_vibration", "type": "double"},
+    {"name": "temperature_alert", "type": "boolean"},
+    {"name": "vibration_alert", "type": "boolean"},
+    {"name": "status_summary", "type": "string"},
+    {"name": "abnormal_count", "type": "int"},
+    {"name": "measurement_count", "type": "int"},
+    {"name": "_aggregated_at", "type": "timestamp"}
+  ],
+  "gold.dim_date": [
+    {"name": "calendar_date", "type": "date"},
+    {"name": "year", "type": "int"},
+    {"name": "month", "type": "int"},
+    {"name": "year_month", "type": "string"},
+    {"name": "year_month_sort", "type": "int"},
+    {"name": "weekday_no", "type": "int"},
+    {"name": "weekday_jp", "type": "string"},
+    {"name": "is_weekend", "type": "boolean"}
+  ],
+  "gold.dim_line": [
+    {"name": "line_id", "type": "string"},
+    {"name": "line_name", "type": "string"},
+    {"name": "plant_id", "type": "string"},
+    {"name": "capacity_per_shift", "type": "int"}
+  ],
+  "gold.dim_equipment": [
+    {"name": "equipment_id", "type": "string"},
+    {"name": "equipment_name", "type": "string"},
+    {"name": "line_id", "type": "string"},
+    {"name": "rated_temperature_c", "type": "double"}
+  ],
+  "gold.dim_status": [
+    {"name": "status", "type": "string"},
+    {"name": "severity_order", "type": "int"}
+  ]
+}
